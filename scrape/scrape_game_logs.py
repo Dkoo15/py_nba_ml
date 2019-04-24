@@ -3,11 +3,13 @@ import json
 
 lastGameScraped = 21600760
 
-seasons = ['http://stats.nba.com/stats/leaguegamelog?Counter=1000&DateFrom=&DateTo=&Direction=DESC&LeagueID=00&PlayerOrTeam=T&Season=',
+seasons = [('http://stats.nba.com/stats/leaguegamelog?Counter=1000&DateFrom='
+            '&DateTo=&Direction=DESC&LeagueID=00&PlayerOrTeam=T&Season='),
            '&SeasonType=Regular+Season&Sorter=PTS'
            ]
 
-url = ['http://stats.nba.com/stats/boxscoretraditionalv2?EndPeriod=10&EndRange=',
+url = [('http://stats.nba.com/stats/boxscoretraditionalv2?'
+        'EndPeriod=10&EndRange='),
        '&GameID=',
        '&RangeType=0&Season=',
        '&SeasonType=Regular+Season&StartPeriod=1&StartRange=0'

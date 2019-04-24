@@ -6,104 +6,118 @@ from datetime import datetime
 import time
 
 
-def parse_multicol(filename, sortKey='PLAYER_ID', extraColumns=None):
+def parse_multicol(filename, sortkey='PLAYER_ID', extra_cols=None):
     with open('data/' + filename + '.json', 'r') as infile:
-        statLine = json.load(infile)
-    rawColumns = statLine['resultSets']['headers'][1]['columnNames']
-    offset = statLine['resultSets']['headers'][0]['columnsToSkip']
-    span = statLine['resultSets']['headers'][0]['columnSpan']
-    categories = statLine['resultSets']['headers'][0]['columnNames']
+        statline = json.load(infile)
+    raw_cols = statline['resultSets']['headers'][1]['columnNames']
+    offset = statline['resultSets']['headers'][0]['columnsToSkip']
+    span = statline['resultSets']['headers'][0]['columnSpan']
+    categories = statline['resultSets']['headers'][0]['columnNames']
 
     for i in range(len(categories)):
         prefix = categories[i].replace(" ", "_")
         for j in range(span):
-            rawColumns[3*i+j+offset] = prefix + "_" + rawColumns[3*i+j+offset]
+            raw_cols[3*i+j+offset] = prefix + "_" + raw_cols[3*i+j+offset]
 
-    importedStat = pd.DataFrame(statLine['resultSets']['rowSet'],
-                                columns=rawColumns)
+    imported_stat = pd.DataFrame(statline['resultSets']['rowSet'],
+                                 columns=raw_cols)
 
-    if sortKey is not None:
-        importedStat.sort_values(sortKey, inplace=True)
-        importedStat.set_index(sortKey, inplace=True)
+    if sortkey is not None:
+        imported_stat.sort_values(sortkey, inplace=True)
+        imported_stat.set_index(sortkey, inplace=True)
 
-    if extraColumns is not None:
-        importedStat.drop(extraColumns, inplace=True, axis=1)
+    if extra_cols is not None:
+        imported_stat.drop(extra_cols, inplace=True, axis=1)
 
-    return importedStat
+    return imported_stat
 
 
-def parse_stats(filename, sortKey='PLAYER_ID', extraColumns=None):
+def parse_stats(filename, sortkey='PLAYER_ID', extra_cols=None):
     with open('data/' + filename + '.json', 'r') as infile:
-        statLine = json.load(infile)
+        statline = json.load(infile)
 
-    importedStat = pd.DataFrame(statLine['resultSets'][0]['rowSet'],
-                                columns=statLine['resultSets'][0]['headers'])
-    
-    if sortKey is not None:
-        importedStat.sort_values(sortKey, inplace=True)
-        importedStat.set_index(sortKey, inplace=True)
+    imported_stat = pd.DataFrame(statline['resultSets'][0]['rowSet'],
+                                 columns=statline['resultSets'][0]['headers'])
 
-    if extraColumns is not None:
-        importedStat.drop(extraColumns, inplace=True, axis=1)
+    if sortkey is not None:
+        imported_stat.sort_values(sortkey, inplace=True)
+        imported_stat.set_index(sortkey, inplace=True)
 
-    for col in importedStat.columns.values:
+    if extra_cols is not None:
+        imported_stat.drop(extra_cols, inplace=True, axis=1)
+
+    for col in imported_stat.columns.values:
         if ('RANK'in col):
-            importedStat.drop(col, inplace=True, axis=1)
+            imported_stat.drop(col, inplace=True, axis=1)
 
-    return importedStat
+    return imported_stat
 
 
-def load_player_stats(timeSpan):
-    allPlayers = {}
+def load_player_stats(seasons):
+    allplayers = {}
     cf = ['AGE', 'W_PCT', 'CFID', 'CFPARAMS']
-    extra = ['PLAYER_NAME', 'TEAM_ID', 'TEAM_ABBREVIATION', 'GP', 'W', 'L', 'MIN']
-    bio = ['PLAYER_NAME', 'TEAM_ID', 'TEAM_ABBREVIATION', 'GP', 'AST', 'REB', 'AGE', 'AST_PCT', 'DREB_PCT', 'NET_RATING', 'OREB_PCT', 'PTS', 'TS_PCT', 'USG_PCT']
+    extra = ['PLAYER_NAME', 'TEAM_ID', 'TEAM_ABBREVIATION',
+             'GP', 'W', 'L', 'MIN']
+    bio = ['PLAYER_NAME', 'TEAM_ID', 'TEAM_ABBREVIATION', 'GP', 'AST', 'REB', 
+           'AGE', 'AST_PCT', 'DREB_PCT', 'NET_RATING', 'OREB_PCT', 'PTS',
+           'TS_PCT', 'USG_PCT']
     base = ['REB', 'AST', 'DREB', 'OREB', 'TEAM_ID', 'DD2', 'TD3']
     fga = ['FGA', 'FGM', 'FG_PCT']
     blk = ['BLK', 'BLKA', 'PF', 'PFD']
-    trackingPre = ['PLAYER_NAME', 'PLAYER_LAST_TEAM_ID', 'PLAYER_LAST_TEAM_ABBREVIATION', 'AGE', 'GP', 'G']
+    trackingPre = ['PLAYER_NAME', 'PLAYER_LAST_TEAM_ID',
+                   'PLAYER_LAST_TEAM_ABBREVIATION', 'AGE', 'GP', 'G']
 
-    for year in timeSpan:
+    for year in seasons:
 
         stats = []
-        traditional = (parse_stats('Base'+'PerGame'+year, extraColumns=fga+blk+base+cf))
-        stats.append(parse_stats('Advanced'+'PerGame'+year, extraColumns=fga+extra+cf))
-        stats.append(parse_stats('Misc'+'PerGame'+year, extraColumns=extra+blk+cf))
-        stats.append(parse_stats('biostats'+'PerGame'+year, extraColumns=bio))
-        stats.append(parse_stats('PerGame'+'Efficiency'+year, extraColumns=extra))
-        stats.append(parse_stats('PerGame'+'Passing'+year, extraColumns=extra))
-        stats.append(parse_stats('PerGame'+'SpeedDistance'+year, extraColumns=extra))
-        stats.append(parse_stats('PerGame'+'Rebounding'+year, extraColumns=extra))
-        stats.append(parse_stats('PerGame'+'Possessions'+year, extraColumns=extra+['POINTS']))
+        traditional = (parse_stats('Base'+'PerGame'+year,
+                                   extra_cols=fga+blk+base+cf))
+        stats.append(parse_stats('Advanced'+'PerGame'+year,
+                                 extra_cols=fga+extra+cf))
+        stats.append(parse_stats('Misc'+'PerGame'+year,
+                                 extra_cols=extra+blk+cf))
+        stats.append(parse_stats('biostats'+'PerGame'+year,
+                                 extra_cols=bio))
+        stats.append(parse_stats('PerGame'+'Efficiency'+year,
+                                 extra_cols=extra))
+        stats.append(parse_stats('PerGame'+'Passing'+year,
+                                 extra_cols=extra))
+        stats.append(parse_stats('PerGame'+'SpeedDistance'+year,
+                                 extra_cols=extra))
+        stats.append(parse_stats('PerGame'+'Rebounding'+year,
+                                 extra_cols=extra))
+        stats.append(parse_stats('PerGame'+'Possessions'+year,
+                                 extra_cols=extra+['POINTS']))
 
-        allPlayers[year] = traditional.join(stats, how='inner')
-        allPlayers[year].fillna(value=0, inplace=True)
-        allPlayers[year].to_csv('processed/PlayerStats'+year+'.csv')
+        allplayers[year] = traditional.join(stats, how='inner')
+        allplayers[year].fillna(value=0, inplace=True)
+        allplayers[year].to_csv('processed/PlayerStats'+year+'.csv')
 
-    return allPlayers
+    return allplayers
 
 
-def load_gamelogs(timeSpan):
-    allGames = {}
-    allPlayerGameLogs = {}
+def load_gamelogs(seasons):
+    allgames = {}
+    allplayer_gamelogs = {}
 
-    for year in timeSpan:
+    for year in seasons:
         print('Loading season %d...' % year)
 
         with open('data/' + year + '.json', 'r') as in_file:
             gameJson = json.load(in_file)
 
-        gameList = pd.DataFrame(gameJson['resultSets'][0]['rowSet'],
+        gamelist = pd.DataFrame(gameJson['resultSets'][0]['rowSet'],
                                 columns=gameJson['resultSets'][0]['headers'])
-        gameList.sort_values('GAME_ID', inplace=True)
-        listByGameID = gameList[gameList. WL == 'W'].set_index('GAME_ID')['GAME_DATE']
+        gamelist.sort_values('GAME_ID', inplace=True)
+        listByGameID = gamelist[gamelist. WL == 'W'].set_index('GAME_ID')['GAME_DATE']
         gameid_keys = listByGameID.index.values
 
         with open('data/Games'+year+'.json', 'r') as infile:
             gameString = infile.read().splitlines()
         gameString.pop(0)
 
-        gameScores = pd.DataFrame(columns=['HOME_TEAM', 'HOME_SCORE', 'AWAY_TEAM', 'AWAY_SCORE'])
+        gameScores = pd.DataFrame(columns=['HOME_TEAM', 'HOME_SCORE',
+                                           'AWAY_TEAM', 'AWAY_SCORE'])
         boxScoreCols = ['GAME_ID', 'TEAM_ABBREVIATION', ' PLAYER_ID', 'MIN']
         tempGameList = []
 
@@ -119,49 +133,52 @@ def load_gamelogs(timeSpan):
                                      teamBoxScore.PTS[1]
                                      ]
   
-            playerBoxScore = pd.DataFrame(data['resultSets'][0]['rowSet'], columns=data['resultSets'][0]['headers'])
+            playerBoxScore = pd.DataFrame(data['resultSets'][0]['rowSet'],
+                                          columns=data['resultSets'][0]['headers'])
             tempGameList.append(playerBoxScore[boxScoreCols].set_index('GAME_ID'))
 
-        allGames[year] = pd.concat([scoreList, listByGameID], axis=1)
+        allgames[year] = pd.concat([scoreList, listByGameID], axis=1)
 
-        allPlayerGameLogs[year] = pd.concat(tempGameList)
-        allPlayerGameLogs[year].set_index(allPlayerGameLogs[year].index + '-' + allPlayerGameLogs[year]['TEAM_ABBREVIATION'])
+        allplayer_gamelogs[year] = pd.concat(tempGameList)
+        allplayer_gamelogs[year].set_index(allplayer_gamelogs[year].index + '-' +
+                                           allplayer_gamelogs[year]['TEAM_ABBREVIATION'])
 
-        return [allGames, allPlayerGameLogs]
+        return [allgames, allplayer_gamelogs]
 
 
-def get_last_game(gameList, boxScores):
-    boxScores['LAST_GAME'] = 0
+def get_last_game(gamelist, boxscores):
+    boxscores['LAST_GAME'] = 0
 
-    for gameid, g in gameList:
-        thisGameDate = datetime.strptime(gameList.loc[gameid].GAME_DATE, '%Y-%m-%d')
-        ind = gameList.index.get_loc(gameid)      # Position of the game on the season game list
+    for gameid, g in gamelist:
+        gamedate = datetime.strptime(gamelist.loc[gameid].GAME_DATE,
+                                     '%Y-%m-%d')
+        ind = gamelist.index.get_loc(gameid)
 
-        teamArray = [gameList.loc[gameid].HOME_TEAM,
-                     gameList.loc[gameid].AWAY_TEAM]
+        teamArray = [gamelist.loc[gameid].HOME_TEAM,
+                     gamelist.loc[gameid].AWAY_TEAM]
         daysSinceLastGame = [0, 0]
 
         for TEAM in teamArray:
             i = ind-1
 
             while (i > 0 and (TEAM != games.iloc[i].HOME_TEAM
-                         and TEAM != games.iloc[i].AWAY_TEAM)):
+                   and TEAM != games.iloc[i].AWAY_TEAM)):
                 i -= 1 
 
             if(i >= 0):
-                lastGameID[j] = games.index[i]
-                lastGameDate = datetime.strptime(games.iloc[i].GAME_DATE,
-                                                 '%Y-%m-%d')  # Date of this game
-                daysSinceLastGame[j] = min(5, (thisGameDate-lastGameDate).days)
+                last_gameid[j] = games.index[i]
+                laste_gamedate = datetime.strptime(games.iloc[i].GAME_DATE,
+                                                   '%Y-%m-%d')
+                daysSinceLastGame[j] = min(5, (gamedate-laste_gamedate).days)
 
-        #for playerid, player in boxScores[gameid].iterrows():
+        #for playerid, player in boxscores[gameid].iterrows():
             #j = team.index(player.TEAM_ABBREVIATION)		  
-            #boxScores.set_value(gameid+'-'+TEAM, 'LAST_GAME', daysSinceLastGame[j]) 
+            #boxscores.set_value(gameid+'-'+TEAM, 'LAST_GAME', daysSinceLastGame[j]) 
                 #FIND THE TEAM
 
             #minutesLastPlayed = 0
             #try: 
-                #timeLastPlayed = boxScores[lastGameID[j]].MIN.loc[playerid]
+                #timeLastPlayed = boxscores[last_gameid[j]].MIN.loc[playerid]
                 #if timeLastPlayed is not None:
                     #minutesLastPlayed = int(timeLastPlayed.split(':')[0])
             #except KeyError:
